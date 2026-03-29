@@ -312,7 +312,8 @@ header ul a:hover {
     align-items: center;
     flex-direction: column;
     width: 80%;
-    margin-top: 100px;
+    position: relative;
+    z-index: 5;
 }
 
 .section-title {
@@ -542,8 +543,7 @@ header ul a:hover {
     width: 80%;
     min-height: 100vh;
     height: auto;
-    margin-top: 200px;
-    margin-bottom: 200px;
+    z-index: 5;
     padding-bottom: 100px;
 }
 
