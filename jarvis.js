@@ -45,41 +45,21 @@ function setupEvents() {
     navBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            container.style.display = 'flex';
-            container.classList.remove('minimized');
+            window.toggleJarvis();
             speak("Interface expanded.");
-            inputField.focus();
         });
     });
 
-    // Window Controls - Close with Reactor Fade-Out First
+    // Window Controls
     if (btnClose) {
         btnClose.addEventListener('click', () => {
-            // Stage 1: Fade out reactor system first
-            const reactor = container.querySelector('.reactor-system');
-            if (reactor) {
-                reactor.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
-                reactor.style.opacity = '0';
-                reactor.style.transform = 'scale(0.5)';
-            }
-
-            // Stage 2: After reactor fades, fade entire container
+            container.classList.remove('open');
             setTimeout(() => {
-                container.classList.add('fading-out');
-                setTimeout(() => {
-                    container.style.display = 'none';
-                    container.classList.remove('fading-out');
-                    document.body.classList.remove('no-scroll'); // UNLOCK SCROLL
-
-                    // Reset reactor for next open
-                    if (reactor) {
-                        reactor.style.opacity = '1';
-                        reactor.style.transform = 'scale(1)';
-                    }
-                    if (recognition && isListening) recognition.stop();
-                    synthesis.cancel();
-                }, 600); // Container fade time
-            }, 300); // Wait for reactor to fade
+                container.style.display = 'none';
+                document.body.classList.remove('no-scroll');
+                if (recognition && isListening) recognition.stop();
+                synthesis.cancel();
+            }, 600);
         });
     }
 
@@ -259,7 +239,7 @@ async function processCommand(input) {
         outputZone.style.display = 'flex'; // Ensure chat is visible
     }
 
-    // Sofia-style Thinking State Animation
+    // Jarvis-style Thinking State Animation
     const thinkingMsg = document.createElement('div');
     thinkingMsg.className = 'thinking-box';
     thinkingMsg.innerHTML = `
@@ -273,9 +253,7 @@ async function processCommand(input) {
     outputZone.scrollTop = outputZone.scrollHeight;
 
     try {
-        if (!API_KEY) {
-            throw new Error("Security Keys Missing");
-        }
+        // Netlify Proxy handles API key internally.
 
         const context = getPageContext();
         // OpenRouter uses OpenAI-compatible chat format
@@ -358,16 +336,23 @@ ${context}`
             thinkingMsg.remove();
         }
 
-        let errorMessage = 'Critical Error. ';
+        let errorMessage = '';
         if (error.name === 'AbortError') {
-            errorMessage += 'Request timeout. Please try again.';
+            errorMessage = '⏱️ Request timed out. Please try again, Sir.';
         } else if (error.message.includes('API Error')) {
-            errorMessage += error.message; // Show exact error (e.g., 401, 404)
+            errorMessage = `⚠️ ${error.message}`;
+        } else if (error.message === 'Failed to fetch' || error instanceof TypeError) {
+            // Detect local file:// or missing Netlify proxy
+            if (window.location.protocol === 'file:') {
+                errorMessage = '🔌 Jarvis requires a live server to operate. Deploy to Netlify or run a local dev server to enable AI responses.';
+            } else {
+                errorMessage = '🌐 Network error — cannot reach the AI server. Check your internet connection and try again.';
+            }
         } else {
-            errorMessage += error.message;
+            errorMessage = `⚠️ System error: ${error.message}`;
         }
 
-        addMessage(`⚠️ ${errorMessage}`, 'jarvis error');
+        addMessage(errorMessage, 'jarvis error');
     } finally {
         isProcessing = false;
     }
@@ -416,130 +401,161 @@ function getPageContext() {
     }
 }
 
-function addMessage(text, type) {
+async function typeHTML(element, htmlString, speed = 15) {
+    element.innerHTML = '';
+    const cursor = document.createElement('span');
+    cursor.className = 'j-cursor';
+
+    let i = 0;
+    let isTag = false;
+    let currentHtml = '';
+
+    return new Promise(resolve => {
+        function typeChar() {
+            if (i < htmlString.length) {
+                const char = htmlString.charAt(i);
+                currentHtml += char;
+                if (char === '<') isTag = true;
+                if (char === '>') isTag = false;
+
+                element.innerHTML = currentHtml;
+                element.appendChild(cursor);
+                i++;
+
+                // Auto-scroll while typing
+                const outputZone = document.getElementById('jarvis-output');
+                if (outputZone) outputZone.scrollTop = outputZone.scrollHeight;
+
+                // Speed up instantly for HTML tags so they don't render as text breaks
+                setTimeout(typeChar, isTag ? 0 : speed);
+            } else {
+                cursor.remove();
+                resolve();
+            }
+        }
+        typeChar();
+    });
+}
+
+async function addMessage(text, type) {
     try {
         const div = document.createElement('div');
-        div.className = `msg ${type}`;
+        div.className = `j-message ${type === 'jarvis error' ? 'jarvis error' : type}`;
 
-        // Create avatar icon
-        const avatar = document.createElement('div');
-        avatar.className = 'msg-avatar';
-        if (type === 'user') {
-            avatar.innerHTML = `<i class='bx bx-user'></i>`;
-        } else {
-            avatar.innerHTML = `<i class='bx bx-bot'></i>`;
-        }
-
-        // Create message content wrapper
-        const content = document.createElement('div');
-        content.className = 'msg-content';
-
-        // Parse Rich Content (Project Cards) for JARVIS messages
-        if (type === 'jarvis' && text.includes(':::PROJECT_CARD')) {
-            const cardRegex = /:::PROJECT_CARD\s+img:\s*(.*?)\s+title:\s*(.*?)\s+type:\s*(.*?)\s+tech:\s*(.*?)\s+desc:\s*(.*?)\s+link:\s*(.*?)\s+:::/s;
-            const match = text.match(cardRegex);
-
-            if (match) {
-                const [fullMatch, img, title, pType, tech, desc, link] = match;
-                const techTags = tech.split(',').map(t => `<span class="tech-tag">${t.trim()}</span>`).join('');
-
-                const cardHtml = `
-                    <div class="rich-project-card">
-                        <div class="card-header">
-                            <div class="card-icon"><i class='bx bx-layer'></i></div>
-                            <div class="card-meta">
-                                <div class="card-title">${title} <span class="card-type">${pType}</span></div>
-                            </div>
-                        </div>
-                        <div class="card-tags">${techTags}</div>
-                        <div class="card-desc">${desc}</div>
-                        <div class="card-actions">
-                            <a href="${link}" target="_blank" class="action-btn"><i class='bx bx-link-external'></i> View Project</a>
-                            <a href="#" class="action-btn secondary"><i class='bx bx-play-circle'></i> Live Demo</a>
-                        </div>
-                    </div>
-                `;
-
-                // Remove the raw block and append text + card
-                const cleanText = text.replace(fullMatch, '').trim();
-                content.innerHTML = (cleanText ? parseMarkdown(cleanText) : '') + cardHtml;
-            } else {
-                content.innerHTML = parseMarkdown(text);
-            }
-        } else {
-            content.innerHTML = parseMarkdown(text);
-        }
+        // Create message bubble
+        const bubble = document.createElement('div');
+        bubble.className = 'j-bubble';
 
         // Different structure for user vs jarvis messages
         if (type === 'user') {
-            // User: horizontal layout (avatar on right)
-            div.appendChild(content);
-            div.appendChild(avatar);
+            bubble.innerHTML = parseMarkdown(text);
+            div.appendChild(bubble);
         } else {
-            // Jarvis: header wrapper with avatar + content
+            // Setup JARVIS layout
             const header = document.createElement('div');
-            header.className = 'msg-header';
-            header.appendChild(avatar);
-            header.appendChild(content);
-            div.appendChild(header);
+            header.className = 'j-header-icon';
+            header.innerHTML = `<i class='bx bx-bot'></i>`;
 
-            // Add Quick Actions for non-error AI responses only
-            if (!type.includes('error')) {
-                const quickActions = document.createElement('div');
-                quickActions.className = 'quick-actions';
-                quickActions.innerHTML = `
-                    <div class="action-label"><i class='bx bx-bulb'></i> Quick Actions</div>
-                    <div class="action-tags">
-                        <span class="action-tag" onclick="processCommand('Tell me about Irfan\\'s experience')">📋 Experience</span>
-                        <span class="action-tag" onclick="processCommand('What are Irfan\\'s skills?')">⚡ Skills</span>
-                        <span class="action-tag" onclick="processCommand('Show best project')">⭐ Best Project</span>
-                        <span class="action-tag" onclick="processCommand('Show all projects')">🚀 All Projects</span>
-                    </div>
-                `;
-                div.appendChild(quickActions);
+            div.appendChild(bubble); // Just the bubble for JARVIS
+
+            // Determine content
+            let finalHtml = '';
+            if (text.includes(':::PROJECT_CARD')) {
+                const cardRegex = /:::PROJECT_CARD\s+img:\s*(.*?)\s+title:\s*(.*?)\s+type:\s*(.*?)\s+tech:\s*(.*?)\s+desc:\s*(.*?)\s+link:\s*(.*?)\s+:::/s;
+                const match = text.match(cardRegex);
+
+                if (match) {
+                    const [fullMatch, img, title, pType, tech, desc, link] = match;
+                    const techTags = tech.split(',').map(t => `<span class="category-tags" style="display:inline-block; padding: 2px 6px; font-size:0.7rem;">${t.trim()}</span>`).join('');
+
+                    const cardHtml = `
+                        <div class="j-card" style="flex-direction: column; align-items: flex-start; margin-top: 10px;">
+                            <div class="title" style="color: var(--j-cyan); font-size: 1rem;">${title} <span style="color:#fff; font-size:0.75rem;">— ${pType}</span></div>
+                            <div style="display:flex; gap:5px; flex-wrap:wrap; margin: 5px 0;">${techTags}</div>
+                            <div class="sub" style="margin-bottom: 10px;">${desc}</div>
+                            <a href="${link}" target="_blank" style="color: var(--j-purple); text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 5px;"><i class='bx bx-link-external'></i> Access System</a>
+                        </div>
+                    `;
+                    const cleanText = text.replace(fullMatch, '').trim();
+                    finalHtml = (cleanText ? parseMarkdown(cleanText) : '') + cardHtml;
+                } else {
+                    finalHtml = parseMarkdown(text);
+                }
+            } else {
+                finalHtml = parseMarkdown(text);
             }
-        }
 
-        div.setAttribute('role', 'log');
-        div.setAttribute('aria-live', 'polite');
+            // Append to DOM first so typewriter can target it
+            const outputZone = document.getElementById('jarvis-output');
+            outputZone.appendChild(div);
+
+            // Execute Typewriter for Jarvis
+            await typeHTML(bubble, finalHtml, 15);
+
+            // Once typing finishes, ensure final scroll
+            outputZone.scrollTop = outputZone.scrollHeight;
+            return; // Exit early since we've already appended
+        }
 
         const outputZone = document.getElementById('jarvis-output');
         outputZone.appendChild(div);
         outputZone.scrollTop = outputZone.scrollHeight;
+
     } catch (error) {
         console.error('Error adding message:', error);
     }
 }
 
-function speak(text) {
+function speak(text, onEndCallback = null) {
     try {
-        if (!synthesis) return; // Guard
+        if (!synthesis) {
+            if (onEndCallback) onEndCallback();
+            return;
+        }
         synthesis.cancel();
+        
         const utterance = new SpeechSynthesisUtterance(text);
         const voices = synthesis.getVoices();
 
-        // Voice Selection Logic
         let selectedVoice = null;
         if (voiceGender === 'male') {
-            selectedVoice = voices.find(v => v.name.includes('Google UK English Male')) ||
-                voices.find(v => v.name.includes('male') || v.name.includes('David'));
+            selectedVoice = voices.find(v => 
+                v.lang.startsWith('en') && 
+                (v.name.toLowerCase().includes('male') || 
+                 v.name.toLowerCase().includes('david') || 
+                 v.name.toLowerCase().includes('james') || 
+                 v.name.toLowerCase().includes('daniel') || 
+                 v.name.toLowerCase().includes('google uk english male'))
+            ) || voices.find(v => v.name.toLowerCase().includes('male')) || voices.find(v => v.lang.startsWith('en'));
         } else {
-            selectedVoice = voices.find(v => v.name.includes('Google US English')) ||
-                voices.find(v => v.name.includes('female') || v.name.includes('Zira'));
+            selectedVoice = voices.find(v => 
+                v.lang.startsWith('en') && 
+                (v.name.toLowerCase().includes('female') || 
+                 v.name.toLowerCase().includes('zira') || 
+                 v.name.toLowerCase().includes('samantha') || 
+                 v.name.toLowerCase().includes('google us english'))
+            ) || voices.find(v => v.name.toLowerCase().includes('female')) || voices.find(v => v.lang.startsWith('en'));
         }
 
         if (selectedVoice) utterance.voice = selectedVoice;
+        
         utterance.pitch = voiceGender === 'male' ? 0.9 : 1.1;
-        utterance.rate = 1.1;
+        utterance.rate = 1.0;
+        utterance.volume = 1.0;
 
-        // Error handling for speech synthesis
+        utterance.onend = () => {
+            if (onEndCallback) onEndCallback();
+        };
+
         utterance.onerror = (event) => {
             console.error('Speech synthesis error:', event);
+            if (onEndCallback) onEndCallback();
         };
 
         synthesis.speak(utterance);
     } catch (error) {
         console.error('Error in speech synthesis:', error);
+        if (onEndCallback) onEndCallback();
     }
 }
 
@@ -560,7 +576,11 @@ window.toggleJarvis = function () {
         container.style.display = 'flex';
         container.classList.remove('minimized');
         container.classList.remove('fading-out');
-        document.body.classList.add('no-scroll'); // LOCK SCROLL
+
+        requestAnimationFrame(() => {
+            container.classList.add('open');
+            document.body.classList.add('no-scroll');
+        });
 
         // Reset to Welcome
         if (welcomeScreen) {
@@ -568,17 +588,20 @@ window.toggleJarvis = function () {
         }
 
         document.getElementById('j-input').focus();
-
-        // Ensure reactor is visible
-        const reactor = container.querySelector('.reactor-system');
-        if (reactor) {
-            reactor.style.opacity = '1';
-            reactor.style.transform = 'scale(0.6)';
-        }
     } else {
-        // CLOSE JARVIS (Trigger the close button logic by click to use animation)
-        document.getElementById('j-close').click();
+        // CLOSE JARVIS
+        container.classList.remove('open');
+        setTimeout(() => {
+            container.style.display = 'none';
+            document.body.classList.remove('no-scroll');
+        }, 600);
     }
+};
+
+window.handleQuickQuery = function(query) {
+    if (isProcessing) return;
+    addMessage(query, 'user');
+    processCommand(query);
 };
 
 // Make processCommand global for HTML onclicks
@@ -675,9 +698,9 @@ function setupVoiceMode() {
             voiceMuted = !voiceMuted;
             if (voiceMuted) {
                 speakerBtn.querySelector('i').className = 'bx bx-volume-mute';
-                synthesis.cancel();
+                if (synthesis) synthesis.cancel();
             } else {
-                speakerBtn.querySelector('i').className = 'bx bx-volume-full';
+                speakerBtn.querySelector('i').className = 'bx bxs-volume-full';
             }
         });
     }
@@ -749,6 +772,9 @@ async function processVoiceCommand(text) {
             { role: "user", content: text }
         ];
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
         const response = await fetch(API_URL, {
             method: "POST",
             headers: {
@@ -757,11 +783,13 @@ async function processVoiceCommand(text) {
             body: JSON.stringify({
                 model: GROQ_MODEL,
                 messages: messages,
-                max_tokens: 200,
+                max_tokens: 500,
                 temperature: 0.7
-            })
+            }),
+            signal: controller.signal
         });
 
+        clearTimeout(timeoutId);
         clearInterval(statusInterval);
 
         if (!response.ok) {
@@ -769,14 +797,19 @@ async function processVoiceCommand(text) {
         }
 
         const data = await response.json();
+        
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error('Invalid API response format');
+        }
+        
         const responseText = data.choices[0].message.content;
 
         // Speaking state
         setVoiceState('speaking', 'Jarvis Speaking', 'Delivering response...');
 
-        // Speak the response with male voice
+        // Speak the response using consolidated speak function
         if (!voiceMuted) {
-            speakWithVoice(responseText, () => {
+            speak(responseText, () => {
                 // After speaking, go back to listening
                 if (voiceModeActive) {
                     setVoiceState('listening', 'Listening...', 'Ready for next query...');
@@ -813,35 +846,3 @@ async function processVoiceCommand(text) {
     }
 }
 
-// Speak with male Jarvis voice
-function speakWithVoice(text, onEndCallback) {
-    if (!synthesis) return;
-    synthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-
-    // Try to find a male English voice
-    const voices = synthesis.getVoices();
-    const maleVoice = voices.find(v =>
-        v.lang.startsWith('en') &&
-        (v.name.toLowerCase().includes('male') ||
-            v.name.toLowerCase().includes('david') ||
-            v.name.toLowerCase().includes('james') ||
-            v.name.toLowerCase().includes('daniel') ||
-            v.name.toLowerCase().includes('google uk english male'))
-    ) || voices.find(v => v.lang.startsWith('en'));
-
-    if (maleVoice) {
-        utterance.voice = maleVoice;
-    }
-
-    utterance.rate = 1.0;
-    utterance.pitch = 0.9; // Slightly lower pitch for male voice
-    utterance.volume = 1.0;
-
-    utterance.onend = () => {
-        if (onEndCallback) onEndCallback();
-    };
-
-    synthesis.speak(utterance);
-}

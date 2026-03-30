@@ -37,25 +37,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- 2. ROBUST VIDEO PLAYBACK SYSTEM ---
-    const videoList = [
-        document.getElementById('projectVideo1'),
-        document.getElementById('projectVideo2'),
-        document.getElementById('projectVideo3')
-    ].filter(Boolean); // Remove null entries
-
-    const hoverSign = document.querySelector('.hover-sign');
+    // --- 2. ROBUST VIDEO PLAYBACK SYSTEM (Hover to Play) ---
+    const videoList = document.querySelectorAll('.cinematic-video');
 
     videoList.forEach(video => {
-        let playPromise; // Store the promise state
+        let playPromise;
+
+        // Find the parent project-card to attach hover listeners
+        const hoverTarget = video.closest('.project-card') || video.parentElement;
 
         const handleMouseEnter = () => {
             try {
-                // Show activity
-                if (hoverSign) hoverSign.classList.add("active");
                 gsap.to(video, { scale: 1.03, duration: 0.4, ease: "power2.out" });
-
-                // Play and catch errors safely
                 playPromise = video.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(error => {
@@ -69,16 +62,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const handleMouseLeave = () => {
             try {
-                if (hoverSign) hoverSign.classList.remove("active");
                 gsap.to(video, { scale: 1, duration: 0.4, ease: "power2.out" });
-
-                // Robust Pause Logic
                 if (playPromise !== undefined) {
                     playPromise.then(() => {
                         video.pause();
-                        video.currentTime = 0; // Reset video to start
+                        video.currentTime = 0;
                     }).catch(() => {
-                        // If promise failed, just ensure it's paused
                         video.pause();
                     });
                 } else {
@@ -89,8 +78,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         };
 
-        video.parentElement.addEventListener("mouseenter", handleMouseEnter);
-        video.parentElement.addEventListener("mouseleave", handleMouseLeave);
+        hoverTarget.addEventListener("mouseenter", handleMouseEnter);
+        hoverTarget.addEventListener("mouseleave", handleMouseLeave);
     });
 
     // ================================================================
@@ -197,64 +186,69 @@ document.addEventListener("DOMContentLoaded", () => {
             header.dataset.value = header.innerText;
         }
 
-        header.addEventListener("mouseover", event => {
-            try {
-                // BUG FIX: Prevent multiple intervals from stacking
-                if (event.target.dataset.animating === "true") return;
+        let interval = null;
 
-                event.target.dataset.animating = "true";
-                let iterations = 0;
-                const originalText = event.target.dataset.value;
+        const animateText = (event) => {
+            let iterations = 0;
+            const originalText = event.target.dataset.value;
 
-                const interval = setInterval(() => {
-                    event.target.innerText = event.target.innerText
-                        .split("")
-                        .map((letter, index) => {
-                            if (index < iterations) return originalText[index];
-                            return letters[Math.floor(Math.random() * letters.length)];
-                        })
-                        .join("");
+            clearInterval(interval);
 
-                    if (iterations >= originalText.length) {
-                        clearInterval(interval);
-                        event.target.innerText = originalText;
-                        event.target.dataset.animating = "false"; // Release lock
-                    }
+            interval = setInterval(() => {
+                event.target.innerText = event.target.innerText
+                    .split("")
+                    .map((letter, index) => {
+                        if (index < iterations) return originalText[index];
+                        return letters[Math.floor(Math.random() * letters.length)];
+                    })
+                    .join("");
 
-                    iterations += 1 / 3;
-                }, 30);
-            } catch (error) {
-                console.error('Error in text animation:', error);
-                event.target.dataset.animating = "false";
-            }
+                if (iterations >= originalText.length) {
+                    clearInterval(interval);
+                    event.target.innerText = originalText;
+                }
+
+                iterations += 1 / 3;
+            }, 30);
+        };
+
+        header.addEventListener("mouseenter", animateText);
+        
+        header.addEventListener("mouseleave", (event) => {
+            clearInterval(interval);
+            event.target.innerText = event.target.dataset.value;
         });
     });
 
     // --- 5. LAZY LOADING & ROBUST ERROR HANDLING FOR VIDEOS ---
-    const lazyVideos = document.querySelectorAll('video');
+    const lazyVideos = document.querySelectorAll('video[data-src]');
     if ('IntersectionObserver' in window) {
         const videoObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     const video = entry.target;
-                    // Load if data-src exists
+                    
                     if (video.dataset.src) {
                         video.src = video.dataset.src;
+                        
+                        video.onerror = () => {
+                            console.warn(`Video failed to load: ${video.src || 'unknown source'}`);
+                            video.style.display = 'none';
+                            if (video.parentElement && video.parentElement.classList.contains('project-vidbox')) {
+                                video.parentElement.style.background = '#080020';
+                                video.parentElement.innerHTML += '<div style="color:white; opacity:0.5; font-size:12px;">Video Unavailable</div>';
+                            }
+                        };
+
+                        video.load();
+                        if (video.hasAttribute('autoplay')) {
+                            const playPromise = video.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(() => { /* silent catch */ });
+                            }
+                        }
                     }
 
-                    // Add Error Handling
-                    video.onerror = () => {
-                        console.warn(`Video failed to load: ${video.src || 'unknown source'}`);
-                        // Optional: Hide or show placeholder
-                        video.style.display = 'none';
-                        // If it's in a vidbox, maybe style the parent?
-                        if (video.parentElement.classList.contains('project-vidbox')) {
-                            video.parentElement.style.background = '#080020'; // Fallback color
-                            video.parentElement.innerHTML += '<div style="color:white; opacity:0.5; font-size:12px;">Video Unavailable</div>';
-                        }
-                    };
-
-                    video.load();
                     videoObserver.unobserve(video);
                 }
             });

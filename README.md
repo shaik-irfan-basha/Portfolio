@@ -1,125 +1,117 @@
-# 🧠 Shaik Irfan Basha | AI & Full-Stack Portfolio
-
 <div align="center">
-  <img src="images/preview.png" alt="Portfolio Banner" width="100%" />
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000a50,100:00e5ff&text=SHAIK%20IRFAN%20BASHA&fontColor=ffffff&fontSize=50&desc=Artificial%20Intelligence%20Architect&descAlignY=65&descAlign=50" alt="Shaik Irfan Basha API" width="100%" />
+
+  <h3>Sentient Web Architecture & Enterprise AI</h3>
+  <p align="center">
+    <strong>Engineered with precision. Powered by Groq AI. Designed for the Future.</strong>
+    <br />
+    <br />
+    <a href="https://irfan-basha-portfolio.netlify.app/"><b>🔴 INIT LIVE SYSTEM</b></a> · 
+    <a href="mailto:muhammadirfanbasha@gmail.com"><b>📧 UPLINK</b></a> · 
+    <a href="https://www.linkedin.com/in/shaik-irfan-basha"><b>👔 CONNECT</b></a>
+  </p>
 
   <p align="center">
-    <strong>Next-Gen Interactive Portfolio Architecture</strong>
-    <br />
-    Featuring JARVIS AI Assistant, Voice Control, and Holographic UI
-    <br />
-    <br />
-    <a href="https://irfan-basha-portfolio.netlify.app/">🔴 Live Demo</a> · 
-    <a href="https://github.com/shaik-irfan-basha">💻 GitHub</a> · 
-    <a href="https://www.linkedin.com/in/shaik-irfan-basha">👔 LinkedIn</a>
+    <img src="https://img.shields.io/badge/Architecture-Vanilla_JS_&_GSAP-00e5ff?style=for-the-badge&logo=javascript&logoColor=black" />
+    <img src="https://img.shields.io/badge/AI_Engine-Llama_3_70B-ff00ea?style=for-the-badge&logo=openai&logoColor=white" />
+    <img src="https://img.shields.io/badge/Deployment-Netlify_Edge-00ff88?style=for-the-badge&logo=netlify&logoColor=black" />
   </p>
 </div>
 
 ---
 
-## 📖 Overview
+## ⚡ System Overview
 
-This is not just a portfolio; it's a **demonstration of sentient web architecture**. Designed by **Shaik Irfan Basha**, this project fuses advanced frontend engineering with Generative AI to create an immersive, voice-responsive experience.
+This repository houses the source code for my portfolio—a high-performance, interactive neural aesthetic application. It is not just a digital resume; it is a **live demonstration of intelligent web architecture** integrating advanced visual design, robust code, and real-time Artificial Intelligence.
 
-At its core lies **JARVIS**, a fully functional AI assistant powered by **Groq's Llama 3 70B** model. Visitors can interact with the portfolio using natural language—via text or voice—to learn about my skills, projects, and professional background.
+At the core of the experience operates **JARVIS**, an embedded interactive assistant capable of text-to-speech interaction, bidirectional voice comprehension, and context-aware portfolio navigation.
 
-## ✨ Elite Features
+## 🚀 Key Technological Capabilities
 
 ### 🤖 JARVIS AI Core
-- **LLM Integration:** Powered by Groq API (Llama 3.3 70B Versatile) for lightning-fast, intelligent responses.
-- **Context Awareness:** The AI "knows" my entire portfolio, resume, and skills hierarchy.
-- **Voice Mode:** Full-screen immersive voice interface with real-time audio visualization logic.
-- **Speech-to-Text & TTS:** Seamless bidirectional voice communication using Web Speech API.
+- **Serverless API Proxy:** Secure environment integrations passing through Netlify Edge Functions directly to **Groq**.
+- **Versatile LLM (Llama 3):** Capable of reasoning, extracting portfolio payload data, and constructing responsive structures instantly.
+- **Multilingual Web Speech API:** Bidirectional voice recognition and speech synthesis (TTS) supporting native-like conversational rhythms.
+- **Zero-Latency State:** Contextually bound AI that knows my employment history, projects, and architecture details internally.
 
-### � Cinematic UI/UX
-- **Arc Reactor Preloader:** A GSAP-powered, mathematically precise animation sequence.
-- **Glassmorphism:** Modern, frosted-glass UI elements including the 'Field Experience' timeline.
-- **Holographic Effects:** CSS3 animations simulating futuristic HUD interfaces.
-- **Real-World Integrations:** Showcases live repositories, deployed systems (Alpha AI, Al-Haqq, NL-to-SQL), and verified credentials.
-- **Responsive Geometry:** Layouts valid on all viewports, from 4K workstations to mobile devices.
-
-### ⚡ Performance Engineering
-- **Vanilla JS Architecture:** Zero-dependency runtime for maximum performance (60 FPS).
-- **Asset Optimization:** Smart loading strategies for video and high-res assets.
-- **Clean Codebase:** Modular CSS and JS structure for easy maintainability.
-
-## 🛠️ Technical Stack
-
-| Domain | Technologies |
-|:-------|:-------------|
-| **Frontend Core** | HTML5, CSS3 (Variables, Grid, Flexbox), JavaScript (ES6+) |
-| **Artificial Intelligence** | Groq API, Llama 3.3 70B, Prompt Engineering |
-| **Voice Tech** | Web Speech API (SpeechRecognition, SpeechSynthesis) |
-| **Animations** | GSAP (GreenSock), CSS3 Keyframes, Vanilla JS Physics |
-| **Assets** | Boxicons, Google Fonts (Oxygen, Orbitron) |
-
-## 🚀 Installation & Setup
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/shaik-irfan-basha/portfolio.git
-cd portfolio
-```
-
-### 2. Configure API Key
-This project requires a **Groq API Key** for JARVIS to function.
-1. Get a free key at [console.groq.com](https://console.groq.com/).
-2. Open `jarvis.js` and locate the configuration section:
-```javascript
-// jarvis.js
-const API_KEY = "YOUR_GROQ_API_KEY_HERE"; 
-```
-> **Note:** For production, it is recommended to proxy requests through a secure backend or use environment variables if deploying via a build process.
-
-### 3. Run Locally
-Simply open `index.html` in any modern browser (Chrome/Edge recommended for best Voice API support).
-```bash
-# Optional: Serve with Python
-python -m http.server 8000
-```
-Visit `http://localhost:8000`
-
-## � Architecture
-
-```
-Portfolio/
-├── index.html          # Semantic DOM structure
-├── style.css           # Core visual design & animations
-├── jarvis.css          # AI Interface & Chat UI styling
-├── jarvis.js           # AI Logic: API calls, Voice handling, Context management
-├── script.js           # Main interaction logic & GSAP timelines
-├── Documents/          # Verified credentials (PDFs)
-├── images/             # Optimized visual assets
-└── videos/             # Project demos & background loops
-```
-
-## � Voice Commands
-Try saying these to JARVIS:
-- *"Who is Irfan?"*
-- *"Show me his projects."*
-- *"What are his skills?"*
-- *"Contact him."*
-- *"Open voice mode."*
-
-## 🤝 Contributing
-Contributions are welcome! If you have ideas for new AI capabilities or UI enhancements:
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## � Author
-**Shaik Irfan Basha**
-- **AI Specialist & Full-Stack Engineer**
-- [LinkedIn](https://www.linkedin.com/in/shaik-irfan-basha)
-- [GitHub](https://github.com/shaik-irfan-basha)
-- [Email](mailto:muhammadirfanbasha@gmail.com)
-
-## 📄 License
-Distributed under the MIT License. See `LICENSE` for more information.
+### 🎥 Cinematic Engineering
+- **GSAP Physics:** Uncompromising mathematically smooth physics powering the Arc Reactor Boot sequence and DOM interactions.
+- **CSS 3D Mapping:** Interactive, parallax-shifting 3D tilt geometry across all showcased credentials.
+- **Data Decryption Matrices:** Custom JS matrix text-decipher logic running independently on headers.
+- **Responsive Geometry:** CSS Grid & Flexbox layouts scaling from high-resolution studio monitors to mobile device canvases perfectly.
 
 ---
+
+## 🛠️ Tech Stack & Dependencies
+
+```json
+{
+  "Front-End": ["HTML5", "CSS3 Properties & Variables", "Vanilla JS (ES6+)"],
+  "Artificial Intelligence": ["Groq AI (Llama 3 70B)", "Serverless Proxy Protocol"],
+  "Browser APIs": ["IntersectionObserver (Lazy Load)", "Web Speech API", "Local DOM Storage"],
+  "Animations": ["GreenSock (GSAP)", "Custom Matrix Math"]
+}
+```
+
+---
+
+## 🖥️ Local Installation Protocol
+
+Want to run the system locally? Follow the strict command protocols below.
+
+### 1. Establish Local Codebase
+
+```bash
+git clone https://github.com/shaik-irfan-basha/Portfolio.git
+cd Portfolio
+```
+
+### 2. Configure Local AI Proxy
+The system uses the `netlify/functions` proxy by default for security to avoid exposing RAW API keys. To run the JARVIS bot locally:
+
+1. Obtain a key from [Groq Console](https://console.groq.com/).
+2. Run using `netlify-cli` for exact environment testing:
+   ```bash
+   npm install netlify-cli -g
+   netlify dev
+   ```
+3. Or update the API keys in `netlify.toml` / `.env` for your local proxy instance.
+
+---
+
+## 🧬 Architectural Overview
+
+```text
+/Portfolio
+│── /images/               # Core Assets & SVGs
+│── /videos/               # Background Blackhole & Cinematic Showcase Compilations
+│── /netlify/functions     # Node.js proxies protecting the AI logic
+│── index.html             # The Master DOM 
+│── style.css              # Grid, Flexbox, & Aesthetic Typography Configurations
+│── app.js                 # GSAP Timelines, Lazy loading, & Viewport listeners
+│── jarvis.css             # AI Dialog Box styles & Chat configurations 
+└── jarvis.js              # Artificial Intelligence brain mapping & Web Speech triggers
+```
+
+---
+
+## 📡 Live Demonstration Commands
+
+When accessing the live application, initialize JARVIS and speak or type the following voice commands:
+
+- _"Who are you?"_
+- _"Show me Irfan's active deployments."_
+- _"What are his core competencies in AI?"_
+- _"Open voice mode."_
+
+---
+
+## 📄 Licensing & Security
+
+> **Notice:** The architecture and primary codebase layout within this repository are the property of Shaik Irfan Basha. You may fork or clone for educational purposes, but direct cloning for commercial portfolios without heavy modification is discouraged.
+
+Distributed under the **MIT License**.
+
 <p align="center">
-  <i>Engineered with Logic & Passion. © 2026 Irfan Basha.</i>
+  <i>Written & Compiled by Shaik Irfan Basha. The Architecture.</i>
 </p>
