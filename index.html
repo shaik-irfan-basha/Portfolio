@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#080020">
 
     <title>Shaik Irfan Basha | Artificial Intelligence Architect</title>
     <meta name="description"
@@ -72,11 +73,6 @@
                         class='bx bxl-linkedin'></i></a>
                 <a href="https://github.com/shaik-irfan-basha" target="_blank" class="nav-social-btn"><i
                         class='bx bxl-github'></i></a>
-
-
-
-
-
 
                 <!-- Vertical Divider -->
                 <div class="nav-separator"></div>
@@ -154,7 +150,7 @@
                 <div class="arc-card arc-tall" data-aos="fade-up">
                     <div class="arc-glow"></div>
                     <div class="arc-image-wrapper">
-                        <img src="images/Irfan.jpeg" alt="Irfan Basha" class="arc-photo">
+                        <img src="images/Irfan.jpeg" alt="Irfan Basha" class="arc-photo" loading="lazy">
                         <div class="arc-overlay-gradient"></div>
                     </div>
                     <div class="arc-content">
@@ -836,7 +832,7 @@
                     <div class="core-brain-wrapper">
                         <div class="core-pulse-ring"></div>
                         <div class="core-pulse-ring delay-1"></div>
-                        <img class="core-brain-img" src="images/digital brain (2).png" alt="Neural Core">
+                        <img class="core-brain-img" src="images/digital brain (2).png" alt="Neural Core" loading="lazy">
                     </div>
                 </div>
 
@@ -871,18 +867,30 @@
             <div class="skills-marquee-wrapper autoDisplay">
                 <div class="slider" reverse="true" style="--width: 100px; --height: 100px; --quantity: 12;">
                     <div class="list">
-                        <div class="item" style="--position: 1"><i class='bx bx-brain marquee-icon' style="color: #00e5ff;"></i></div>
-                        <div class="item" style="--position: 2"><i class='bx bxl-python marquee-icon' style="color: #3776ab;"></i></div>
-                        <div class="item" style="--position: 3"><i class='bx bx-chip marquee-icon' style="color: #ff00ea;"></i></div>
-                        <div class="item" style="--position: 4"><i class='bx bxl-java marquee-icon' style="color: #007396;"></i></div>
-                        <div class="item" style="--position: 5"><i class='bx bx-data marquee-icon' style="color: #f29111;"></i></div>
-                        <div class="item" style="--position: 6"><i class='bx bxl-html5 marquee-icon' style="color: #e34f26;"></i></div>
-                        <div class="item" style="--position: 7"><i class='bx bxl-css3 marquee-icon' style="color: #1572b6;"></i></div>
-                        <div class="item" style="--position: 8"><i class='bx bxl-javascript marquee-icon' style="color: #f7df1e;"></i></div>
-                        <div class="item" style="--position: 9"><i class='bx bxl-git marquee-icon' style="color: #f05032;"></i></div>
-                        <div class="item" style="--position: 10"><i class='bx bx-code-alt marquee-icon' style="color: #00ff88;"></i></div>
-                        <div class="item" style="--position: 11"><i class='bx bx-file marquee-icon' style="color: #e5ff00;"></i></div>
-                        <div class="item" style="--position: 12"><i class='bx bx-terminal marquee-icon' style="color: #ffffff;"></i></div>
+                        <div class="item" style="--position: 1"><i class='bx bx-brain marquee-icon'
+                                style="color: #00e5ff;"></i></div>
+                        <div class="item" style="--position: 2"><i class='bx bxl-python marquee-icon'
+                                style="color: #3776ab;"></i></div>
+                        <div class="item" style="--position: 3"><i class='bx bx-chip marquee-icon'
+                                style="color: #ff00ea;"></i></div>
+                        <div class="item" style="--position: 4"><i class='bx bxl-java marquee-icon'
+                                style="color: #007396;"></i></div>
+                        <div class="item" style="--position: 5"><i class='bx bx-data marquee-icon'
+                                style="color: #f29111;"></i></div>
+                        <div class="item" style="--position: 6"><i class='bx bxl-html5 marquee-icon'
+                                style="color: #e34f26;"></i></div>
+                        <div class="item" style="--position: 7"><i class='bx bxl-css3 marquee-icon'
+                                style="color: #1572b6;"></i></div>
+                        <div class="item" style="--position: 8"><i class='bx bxl-javascript marquee-icon'
+                                style="color: #f7df1e;"></i></div>
+                        <div class="item" style="--position: 9"><i class='bx bxl-git marquee-icon'
+                                style="color: #f05032;"></i></div>
+                        <div class="item" style="--position: 10"><i class='bx bx-code-alt marquee-icon'
+                                style="color: #00ff88;"></i></div>
+                        <div class="item" style="--position: 11"><i class='bx bx-file marquee-icon'
+                                style="color: #e5ff00;"></i></div>
+                        <div class="item" style="--position: 12"><i class='bx bx-terminal marquee-icon'
+                                style="color: #ffffff;"></i></div>
                     </div>
                 </div>
             </div>
@@ -1215,43 +1223,45 @@
             </div>
         </div>
 
-        <!-- FULL-SCREEN VOICE MODE OVERLAY -->
-        <div id="voice-mode" class="voice-overlay">
-            <button id="voice-close" class="voice-close-btn"><i class='bx bx-x'></i></button>
-
-            <div class="voice-content">
-                <div id="voice-status" class="voice-status">Listening...</div>
-
-                <!-- Audio Visualizer Bars -->
-                <div class="voice-visualizer">
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                </div>
-
-                <!-- User's spoken text -->
-                <div id="voice-transcript" class="voice-transcript"></div>
-            </div>
-
-            <!-- Voice Control Buttons -->
-            <div class="voice-controls">
-                <button id="voice-speaker" class="voice-btn speaker" title="Toggle Sound">
-                    <i class='bx bx-volume-full'></i>
-                </button>
-                <button id="voice-cancel" class="voice-btn cancel" title="Cancel">
-                    <i class='bx bx-x'></i>
-                </button>
-                <button id="voice-mic-toggle" class="voice-btn mic" title="Toggle Mic">
-                    <i class='bx bxs-microphone'></i>
-                </button>
-            </div>
-
-            <!-- Status Bar -->
-            <div id="voice-status-bar" class="voice-status-bar"></div>
         </div>
 
+    </div> <!-- Close jarvis-container -->
+
+    <!-- FULL-SCREEN VOICE MODE OVERLAY (Moved outside jarvis-container so it isn't clipped by overflow:hidden) -->
+    <div id="voice-mode" class="voice-overlay">
+        <button id="voice-close" class="voice-close-btn"><i class='bx bx-x'></i></button>
+
+        <div class="voice-content">
+            <div id="voice-status" class="voice-status">Listening...</div>
+
+            <!-- Audio Visualizer Bars -->
+            <div class="voice-visualizer">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+
+            <!-- User's spoken text -->
+            <div id="voice-transcript" class="voice-transcript"></div>
+        </div>
+
+        <!-- Voice Control Buttons -->
+        <div class="voice-controls">
+            <button id="voice-speaker" class="voice-btn speaker" title="Toggle Sound">
+                <i class='bx bx-volume-full'></i>
+            </button>
+            <button id="voice-cancel" class="voice-btn cancel" title="Cancel">
+                <i class='bx bx-x'></i>
+            </button>
+            <button id="voice-mic-toggle" class="voice-btn mic" title="Toggle Mic">
+                <i class='bx bxs-microphone'></i>
+            </button>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="voice-status-bar" class="voice-status-bar"></div>
     </div>
 
     <!-- SCRIPTS -->

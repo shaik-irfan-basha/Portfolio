@@ -37,6 +37,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Close sidebar when clicking a link inside it
+    if (sideBar) {
+        sideBar.querySelectorAll('a[href^="#"]').forEach(link => {
+            link.addEventListener('click', () => {
+                sideBar.classList.remove("open-sidebar");
+                sideBar.classList.add("close-sidebar");
+            });
+        });
+    }
+
     // --- 2. ROBUST VIDEO PLAYBACK SYSTEM (Hover to Play) ---
     const videoList = document.querySelectorAll('.cinematic-video');
 
@@ -45,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Find the parent project-card to attach hover listeners
         const hoverTarget = video.closest('.project-card') || video.parentElement;
+        if (!hoverTarget) return; // null-check fix
 
         const handleMouseEnter = () => {
             try {
@@ -87,54 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ================================================================
     if (isDesktop) {
 
-        // --- 3.1 CUSTOM CURSOR ---
-        const cursor = document.createElement('div');
-        cursor.className = 'custom-cursor';
-        const follower = document.createElement('div');
-        follower.className = 'custom-cursor-follower';
-        document.body.appendChild(cursor);
-        document.body.appendChild(follower);
-
-        const cursorStyle = document.createElement('style');
-        cursorStyle.innerHTML = `
-            .custom-cursor { 
-                position: fixed; width: 6px; height: 6px; 
-                background: #72a1de; border-radius: 50%; 
-                pointer-events: none; z-index: 10000; 
-                transform: translate(-50%, -50%); 
-                mix-blend-mode: difference; 
-            }
-            .custom-cursor-follower { 
-                position: fixed; width: 40px; height: 40px; 
-                border: 1px solid rgba(114, 161, 222, 0.5); 
-                border-radius: 50%; pointer-events: none; 
-                z-index: 9999; transform: translate(-50%, -50%); 
-                transition: transform 0.1s; 
-            }
-            .cursor-hover { 
-                transform: translate(-50%, -50%) scale(1.5); 
-                background: rgba(114, 161, 222, 0.1); 
-                border-color: #fff; 
-            }
-        `;
-        document.head.appendChild(cursorStyle);
-
-        const moveX = gsap.quickTo(cursor, "x", { duration: 0.1 });
-        const moveY = gsap.quickTo(cursor, "y", { duration: 0.1 });
-        const followX = gsap.quickTo(follower, "x", { duration: 0.5, ease: "power2.out" });
-        const followY = gsap.quickTo(follower, "y", { duration: 0.5, ease: "power2.out" });
-
-        // Debounced mouse move for better performance
-        const handleMouseMove = (e) => {
-            moveX(e.clientX);
-            moveY(e.clientY);
-            followX(e.clientX);
-            followY(e.clientY);
-        };
-
-        window.addEventListener("mousemove", handleMouseMove);
-
-        // --- 3.2 3D TILT CARDS ---
+        // --- 3.1 3D TILT CARDS ---
         const tiltCards = document.querySelectorAll('.card, .project-card');
 
         tiltCards.forEach(card => {
@@ -161,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 } catch (error) {
                     console.error('Error in tilt animation:', error);
                 }
-            }, 10);
+            }, 16); // 16ms = ~60fps
 
             card.addEventListener('mousemove', handleTiltMove);
 
@@ -177,35 +141,54 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- 4. DATA DECRYPTION TEXT (OPTIMIZED MATRIX EFFECT) ---
+    // --- 4. DATA DECRYPTION TEXT (FIX: preserve icons/emoji) ---
     const letters = "ABCDEF0123456789";
     const headers = document.querySelectorAll(".section-title, .developer-title, .arsenal-title, .global-title, .card h1");
 
     headers.forEach(header => {
-        if (!header.dataset.value) {
-            header.dataset.value = header.innerText;
-        }
+        // Store original text content only (strip child elements like <i> icons)
+        const childElements = [];
+        header.childNodes.forEach(node => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                childElements.push(node.cloneNode(true));
+            }
+        });
+
+        // Get only the raw text (without icons)
+        const originalText = Array.from(header.childNodes)
+            .filter(n => n.nodeType === Node.TEXT_NODE)
+            .map(n => n.textContent)
+            .join('');
+        
+        if (!originalText.trim()) return; // Skip if no text content
+
+        header.dataset.value = originalText;
 
         let interval = null;
 
-        const animateText = (event) => {
+        const animateText = () => {
             let iterations = 0;
-            const originalText = event.target.dataset.value;
-
             clearInterval(interval);
 
             interval = setInterval(() => {
-                event.target.innerText = event.target.innerText
+                // Reconstruct: scrambled text + preserved child elements
+                const scrambled = originalText
                     .split("")
                     .map((letter, index) => {
+                        if (letter === ' ') return ' ';
                         if (index < iterations) return originalText[index];
                         return letters[Math.floor(Math.random() * letters.length)];
                     })
                     .join("");
 
+                // Clear and rebuild
+                header.textContent = scrambled;
+                childElements.forEach(el => header.appendChild(el.cloneNode(true)));
+
                 if (iterations >= originalText.length) {
                     clearInterval(interval);
-                    event.target.innerText = originalText;
+                    header.textContent = originalText;
+                    childElements.forEach(el => header.appendChild(el.cloneNode(true)));
                 }
 
                 iterations += 1 / 3;
@@ -214,9 +197,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         header.addEventListener("mouseenter", animateText);
         
-        header.addEventListener("mouseleave", (event) => {
+        header.addEventListener("mouseleave", () => {
             clearInterval(interval);
-            event.target.innerText = event.target.dataset.value;
+            header.textContent = originalText;
+            childElements.forEach(el => header.appendChild(el.cloneNode(true)));
         });
     });
 
@@ -234,9 +218,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         video.onerror = () => {
                             console.warn(`Video failed to load: ${video.src || 'unknown source'}`);
                             video.style.display = 'none';
-                            if (video.parentElement && video.parentElement.classList.contains('project-vidbox')) {
-                                video.parentElement.style.background = '#080020';
-                                video.parentElement.innerHTML += '<div style="color:white; opacity:0.5; font-size:12px;">Video Unavailable</div>';
+                            const parent = video.closest('.project-vidbox') || video.parentElement;
+                            if (parent && parent.classList.contains('hud-frame')) {
+                                parent.style.background = '#080020';
+                                const notice = document.createElement('div');
+                                notice.style.cssText = 'color:rgba(255,255,255,0.5); font-size:12px; text-align:center; padding:20px;';
+                                notice.textContent = 'Video Unavailable';
+                                parent.appendChild(notice);
                             }
                         };
 
@@ -265,4 +253,31 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         card.setAttribute('role', 'article');
     });
+
+    // --- 7. STEALTH MODE THEME TOGGLE ---
+    const themeToggle = document.getElementById('stealth-toggle');
+    if (themeToggle) {
+        // Check for saved preference
+        const savedTheme = localStorage.getItem('portfolio-theme');
+        if (savedTheme === 'stealth') {
+            document.body.classList.add('stealth-mode');
+            themeToggle.innerHTML = '<i class="bx bx-sun"></i>';
+            themeToggle.title = 'Switch to Arc Reactor Mode';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('stealth-mode');
+            const isStealth = document.body.classList.contains('stealth-mode');
+
+            if (isStealth) {
+                themeToggle.innerHTML = '<i class="bx bx-sun"></i>';
+                themeToggle.title = 'Switch to Arc Reactor Mode';
+                localStorage.setItem('portfolio-theme', 'stealth');
+            } else {
+                themeToggle.innerHTML = '<i class="bx bx-moon"></i>';
+                themeToggle.title = 'Switch to Stealth Mode';
+                localStorage.setItem('portfolio-theme', 'arc-reactor');
+            }
+        });
+    }
 });

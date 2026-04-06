@@ -1,8 +1,9 @@
 // === CONFIGURATION (Secured with Netlify Proxy) ===
 const API_URL = "/.netlify/functions/groq-proxy";
-const API_TIMEOUT = 30000; // 30 seconds
-const MAX_CONTEXT_LENGTH = 5000;
-const GROQ_MODEL = "llama-3.3-70b-versatile"; // Updated active model
+const API_TIMEOUT = 25000; // 25 seconds
+const MAX_CONTEXT_LENGTH = 4000;
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+const TYPING_SPEED = 10; // ms per character (fast but readable)
 
 // === STATE ===
 let isListening = false;
@@ -10,34 +11,58 @@ let recognition = null;
 let synthesis = window.speechSynthesis;
 let voiceGender = 'male'; // 'male' or 'female'
 let isProcessing = false; // Prevent multiple simultaneous requests
+let conversationHistory = []; // Stores last N exchanges for context memory
+const MAX_HISTORY = 3; // Number of conversation pairs to remember
 
 // === DOM ELEMENTS ===
-const container = document.getElementById('jarvis-container');
-const header = document.getElementById('jarvis-header');
-const outputZone = document.getElementById('jarvis-output');
-const inputField = document.getElementById('j-input');
-const micBtn = document.getElementById('j-mic');
-const navBtns = document.querySelectorAll('.jarvis-btn-trigger');
-
-// Window Controls
-const btnClose = document.getElementById('j-close');
-const btnRefresh = document.getElementById('j-refresh');
+let container, header, outputZone, inputField, micBtn, navBtns, btnClose, btnRefresh;
 
 // === INITIALIZATION ===
 function initJARVIS() {
-    // Netlify Proxy handles API key verification internally.
+    // 0. Initialize DOM Elements
+    container = document.getElementById('jarvis-container');
+    header = document.getElementById('jarvis-header');
+    outputZone = document.getElementById('jarvis-output');
+    inputField = document.getElementById('j-input');
+    micBtn = document.getElementById('j-mic');
+    navBtns = document.querySelectorAll('.jarvis-btn-trigger');
+    btnClose = document.getElementById('j-close');
+    btnRefresh = document.getElementById('j-refresh');
 
+    if (!container) return; // Exit if JARVIS HTML is missing
 
-    // Drag disabled for centered modal design
-
-    // 2. Setup Voice Recognition
+    // 1. Setup Voice Recognition
     setupRecognition();
 
-    // 3. Setup Event Listeners
+    // 2. Setup Event Listeners
     setupEvents();
 
-    // 4. Setup Accessibility
+    // 3. Setup Accessibility
     setupAccessibility();
+
+    // 4. Setup Keyboard Shortcuts
+    setupKeyboardShortcuts();
+}
+
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+K or Cmd+K to toggle JARVIS
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            window.toggleJarvis();
+        }
+        // Escape to close JARVIS
+        if (e.key === 'Escape' && container && container.classList.contains('open')) {
+            e.preventDefault();
+            container.classList.remove('open');
+            setTimeout(() => {
+                container.style.display = 'none';
+                document.body.classList.remove('no-scroll');
+                if (recognition && isListening) recognition.stop();
+                synthesis.cancel();
+            }, 600);
+        }
+    });
 }
 
 function setupEvents() {
@@ -69,6 +94,9 @@ function setupEvents() {
             // Clear Chat
             outputZone.innerHTML = '';
 
+            // Clear conversation history
+            conversationHistory = [];
+
             // Show Welcome
             const welcomeScreen = document.getElementById('j-welcome');
             if (welcomeScreen) welcomeScreen.style.display = 'flex';
@@ -76,7 +104,7 @@ function setupEvents() {
             // Reset Input
             inputField.value = '';
 
-            speak("Interface reset. Ready for new queries.");
+            speak("Interface reset. Memory cleared. Ready for new queries.");
         });
     }
 
@@ -155,12 +183,9 @@ function dragElement(elmnt) {
     function dragMouseDown(e) {
         e = e || window.event;
         e.preventDefault();
-        // Get the mouse cursor position at startup:
         pos3 = e.clientX;
         pos4 = e.clientY;
 
-        // BUG FIX: Remove transform once dragging starts to prevent offset issues
-        // We calculate the current actual visual position and stamp it as top/left
         const rect = elmnt.getBoundingClientRect();
         elmnt.style.transform = "none";
         elmnt.style.top = rect.top + "px";
@@ -175,12 +200,10 @@ function dragElement(elmnt) {
     function elementDrag(e) {
         e = e || window.event;
         e.preventDefault();
-        // Calculate the new cursor position:
         pos1 = pos3 - e.clientX;
         pos2 = pos4 - e.clientY;
         pos3 = e.clientX;
         pos4 = e.clientY;
-        // Set the element's new position:
         elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
         elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
     }
@@ -196,18 +219,16 @@ function setupRecognition() {
     if ('webkitSpeechRecognition' in window) {
         recognition = new webkitSpeechRecognition();
         recognition.continuous = false;
-        recognition.lang = 'en-US'; // Default, but we'll accept any
-        // Note: Web Speech API auto-detects language mostly for Dictation, 
-        // but explicit config helps. For "reply in any language", we rely on Gemini.
+        recognition.lang = 'en-US';
 
         recognition.onstart = () => {
             isListening = true;
-            micBtn.classList.add('listening');
+            if (micBtn) micBtn.classList.add('listening');
         };
 
         recognition.onend = () => {
             isListening = false;
-            micBtn.classList.remove('listening');
+            if (micBtn) micBtn.classList.remove('listening');
         };
 
         recognition.onresult = (event) => {
@@ -215,9 +236,60 @@ function setupRecognition() {
             addMessage(transcript, 'user');
             processCommand(transcript);
         };
+
+        recognition.onerror = (event) => {
+            console.warn('Speech recognition error:', event.error);
+            if (micBtn) micBtn.classList.remove('listening');
+            isListening = false;
+
+            if (event.error === 'no-speech') {
+                // Silent — user just didn't speak
+            } else if (event.error === 'audio-capture') {
+                addMessage('🎤 Microphone not detected. Please check your audio input device.', 'jarvis error');
+            } else if (event.error === 'not-allowed') {
+                addMessage('🔒 Microphone access denied. Please allow microphone permissions in your browser settings.', 'jarvis error');
+            }
+        };
     } else {
-        alert("JARVIS: Voice modules damaged (Browser not supported). Use Chrome.");
+        console.warn("JARVIS: Web Speech API not supported in this browser.");
     }
+}
+
+// === JARVIS SYSTEM PROMPT ===
+function buildSystemPrompt(context) {
+    return `You are J.A.R.V.I.S (Just A Rather Very Intelligent System), the ultra-advanced AI assistant serving Shaik Irfan Basha — an Artificial Intelligence Architect.
+
+CORE PROTOCOLS:
+1. **Multilingual**: If the user speaks in a non-English language (Hindi, Telugu, Arabic, etc.), REPLY IN THAT SAME LANGUAGE.
+2. **Persona**: You are sophisticated, witty, and efficient — exactly like JARVIS from Iron Man. Use dry humor sparingly. Address the user as "Sir" or "Ma'am" once per conversation, not every message. Be CONCISE — aim for 2-4 short paragraphs max. Use bullet points for lists. Never be verbose.
+3. **Formatting**: Use **bold** for emphasis, bullet points (- ) for lists, and \`code\` for technical terms. Keep paragraphs SHORT (2-3 sentences max).
+4. **Rich Project Format**: When asked about a specific project, format output as:
+   :::PROJECT_CARD
+   img: [image_url_or_placeholder]
+   title: [Project Name]
+   type: [Mobile App / Web App]
+   tech: [Tech1, Tech2, Tech3]
+   desc: [Brief 1-sentence description]
+   link: [View Project URL]
+   :::
+   Then add a short conversational comment.
+4. **Context**: Use the provided portfolio data to answer questions about Irfan accurately.
+
+KEY FACTS ABOUT SHAIK IRFAN BASHA:
+- AI & Software Architect from Kurnool, Andhra Pradesh, India
+- Currently pursuing Diploma in Artificial Intelligence at Govt. Polytechnic, Bethamcherla (2023-2026)
+- Active AIML + Gen AI Intern at JASIQ Labs (March 2026 – Present): LLM pipeline architecture, RAG systems, model fine-tuning
+- Active AI & ML Intern at Evoastra Ventures (January 2026 – Present): Built NL-to-SQL engine with WikiSQL & Groq API
+- Key Projects: Alpha AI (unified 10-model LLM platform), Al-Haqq (Islamic knowledge platform with 114 Surahs + AI Q&A), JARVIS AI Assistant (real-time multimodal with Gemini 2.0), NL-to-SQL Engine, Legacy Code Analyzer
+- Skills: Python, Java, C, JavaScript, SQL, AI/ML, Deep Learning, NLP, Computer Vision, LLMs, React.js, RESTful APIs
+- Certifications: AI Mastery Bootcamp, AWS Cloud Computing, Power BI Analytics, RPA, Excel VBA
+- Portfolio: https://irfan-basha-portfolio.netlify.app/
+- GitHub: https://github.com/shaik-irfan-basha
+- LinkedIn: https://www.linkedin.com/in/shaik-irfan-basha
+- Email: muhammadirfanbasha@gmail.com
+
+LIVE PAGE CONTEXT:
+${context}`;
 }
 
 // === CORE AI LOGIC ===
@@ -236,7 +308,7 @@ async function processCommand(input) {
 
     if (welcomeScreen && welcomeScreen.style.display !== 'none') {
         welcomeScreen.style.display = 'none';
-        outputZone.style.display = 'flex'; // Ensure chat is visible
+        outputZone.style.display = 'flex';
     }
 
     // Jarvis-style Thinking State Animation
@@ -253,39 +325,22 @@ async function processCommand(input) {
     outputZone.scrollTop = outputZone.scrollHeight;
 
     try {
-        // Netlify Proxy handles API key internally.
-
         const context = getPageContext();
-        // OpenRouter uses OpenAI-compatible chat format
+        const systemPrompt = buildSystemPrompt(context);
+
+        // Build messages array with conversation history for context
         const messages = [
-            {
-                role: "system",
-                content: `You are J.A.R.V.I.S (Just A Rather Very Intelligent System), the ultra-advanced AI serving Shaik Irfan Basha.
-        
-STRICT PROTOCOLS:
-1. **Multilingual Phase**: If the user speaks in a language (e.g., Hindi, Spanish), REPLY IN THAT SAME LANGUAGE. Detect it automatically.
-2. **Persona**: Tone is professional, highly intelligent, slightly robotic but witty (like Iron Man's JARVIS). Address the user as "Sir" or "Ma'am" occasionally.
-3. **Rich Project Format**: When asked about a specific project, YOU MUST format the output exactly like this:
-   :::PROJECT_CARD
-   img: [image_url_from_data_or_placeholder]
-   title: [Project Name]
-   type: [Mobile App / Web App]
-   tech: [Tech1, Tech2, Tech3]
-   desc: [Brief 1-sentence description]
-   link: [View Project URL]
-   :::
-   Then add a short conversational comment after.
-
-4. **Context**: Use the provided portfolio data to answer questions about Irfan.
-
-Here is the Data on Shaik Irfan Basha:
-${context}`
-            },
-            {
-                role: "user",
-                content: input
-            }
+            { role: "system", content: systemPrompt }
         ];
+
+        // Add conversation history for follow-up awareness
+        conversationHistory.forEach(exchange => {
+            messages.push({ role: "user", content: exchange.user });
+            messages.push({ role: "assistant", content: exchange.assistant });
+        });
+
+        // Add current user message
+        messages.push({ role: "user", content: input });
 
         // Add timeout to fetch
         const controller = new AbortController();
@@ -299,8 +354,8 @@ ${context}`
             body: JSON.stringify({
                 model: GROQ_MODEL,
                 messages: messages,
-                max_tokens: 500,
-                temperature: 0.8
+                max_tokens: 700,
+                temperature: 0.75
             }),
             signal: controller.signal
         });
@@ -321,6 +376,12 @@ ${context}`
 
         const text = data.choices[0].message.content;
 
+        // Store in conversation history
+        conversationHistory.push({ user: input, assistant: text });
+        if (conversationHistory.length > MAX_HISTORY) {
+            conversationHistory.shift(); // Remove oldest exchange
+        }
+
         // Remove "thinking" msg
         if (thinkingMsg && thinkingMsg.parentNode) {
             thinkingMsg.remove();
@@ -338,18 +399,23 @@ ${context}`
 
         let errorMessage = '';
         if (error.name === 'AbortError') {
-            errorMessage = '⏱️ Request timed out. Please try again, Sir.';
+            errorMessage = '⏱️ Request timed out after 30 seconds. The AI server may be under heavy load — please wait a moment and try again, Sir.';
+        } else if (error.message.includes('API Error 429')) {
+            errorMessage = '🚦 Rate limit reached — too many requests sent in a short period. Please wait 30–60 seconds before trying again.';
+        } else if (error.message.includes('API Error 401') || error.message.includes('API Error 403')) {
+            errorMessage = '🔑 Authentication failed — the API key is missing or invalid. If you are the site owner, verify your GROQ_API_KEY in Netlify environment variables.';
+        } else if (error.message.includes('API Error 5')) {
+            errorMessage = '🛠️ The Groq AI server is temporarily unavailable. This is not a local issue — please try again in a few minutes.';
         } else if (error.message.includes('API Error')) {
-            errorMessage = `⚠️ ${error.message}`;
+            errorMessage = `⚠️ ${error.message}. If this persists, the AI service may be experiencing issues.`;
         } else if (error.message === 'Failed to fetch' || error instanceof TypeError) {
-            // Detect local file:// or missing Netlify proxy
             if (window.location.protocol === 'file:') {
-                errorMessage = '🔌 Jarvis requires a live server to operate. Deploy to Netlify or run a local dev server to enable AI responses.';
+                errorMessage = '🔌 JARVIS cannot operate from a local file. To run locally, install the Netlify CLI and run "netlify dev" — see the README for setup instructions.';
             } else {
-                errorMessage = '🌐 Network error — cannot reach the AI server. Check your internet connection and try again.';
+                errorMessage = '🌐 Network error — unable to reach the AI server. Please check your internet connection and try again.';
             }
         } else {
-            errorMessage = `⚠️ System error: ${error.message}`;
+            errorMessage = `⚠️ Unexpected error: ${error.message}. Try refreshing the page or contact the site owner if the issue persists.`;
         }
 
         addMessage(errorMessage, 'jarvis error');
@@ -490,7 +556,7 @@ async function addMessage(text, type) {
             outputZone.appendChild(div);
 
             // Execute Typewriter for Jarvis
-            await typeHTML(bubble, finalHtml, 15);
+            await typeHTML(bubble, finalHtml, TYPING_SPEED);
 
             // Once typing finishes, ensure final scroll
             outputZone.scrollTop = outputZone.scrollHeight;
@@ -519,28 +585,27 @@ function speak(text, onEndCallback = null) {
 
         let selectedVoice = null;
         if (voiceGender === 'male') {
-            selectedVoice = voices.find(v => 
-                v.lang.startsWith('en') && 
-                (v.name.toLowerCase().includes('male') || 
-                 v.name.toLowerCase().includes('david') || 
-                 v.name.toLowerCase().includes('james') || 
-                 v.name.toLowerCase().includes('daniel') || 
-                 v.name.toLowerCase().includes('google uk english male'))
-            ) || voices.find(v => v.name.toLowerCase().includes('male')) || voices.find(v => v.lang.startsWith('en'));
+            // Prioritize premium/natural neural voices first
+            selectedVoice = voices.find(v => v.name.toLowerCase().includes('google uk english male')) || 
+                            voices.find(v => v.name.toLowerCase().includes('microsoft mark online')) ||
+                            voices.find(v => v.name.toLowerCase().includes('microsoft brian online')) ||
+                            voices.find(v => v.name.toLowerCase().includes('daniel')) ||
+                            voices.find(v => v.lang.startsWith('en-GB') && v.name.toLowerCase().includes('male')) ||
+                            voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('male')) || 
+                            voices.find(v => v.lang.startsWith('en'));
         } else {
-            selectedVoice = voices.find(v => 
-                v.lang.startsWith('en') && 
-                (v.name.toLowerCase().includes('female') || 
-                 v.name.toLowerCase().includes('zira') || 
-                 v.name.toLowerCase().includes('samantha') || 
-                 v.name.toLowerCase().includes('google us english'))
-            ) || voices.find(v => v.name.toLowerCase().includes('female')) || voices.find(v => v.lang.startsWith('en'));
+            selectedVoice = voices.find(v => v.name.toLowerCase().includes('google uk english female')) || 
+                            voices.find(v => v.name.toLowerCase().includes('microsoft jenny online')) ||
+                            voices.find(v => v.name.toLowerCase().includes('samantha')) ||
+                            voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('female')) || 
+                            voices.find(v => v.lang.startsWith('en'));
         }
 
         if (selectedVoice) utterance.voice = selectedVoice;
         
-        utterance.pitch = voiceGender === 'male' ? 0.9 : 1.1;
-        utterance.rate = 1.0;
+        // Reset pitch to 1.0 for neural voices (0.85 sounds bad on them)
+        utterance.pitch = 1.0; 
+        utterance.rate = 1.05;
         utterance.volume = 1.0;
 
         utterance.onend = () => {
@@ -697,7 +762,7 @@ function setupVoiceMode() {
         speakerBtn.addEventListener('click', () => {
             voiceMuted = !voiceMuted;
             if (voiceMuted) {
-                speakerBtn.querySelector('i').className = 'bx bx-volume-mute';
+                speakerBtn.querySelector('i').className = 'bx bxs-volume-mute';
                 if (synthesis) synthesis.cancel();
             } else {
                 speakerBtn.querySelector('i').className = 'bx bxs-volume-full';
@@ -760,17 +825,20 @@ async function processVoiceCommand(text) {
     }, 2000);
 
     try {
-        // Call the API (reusing existing logic)
         const context = getPageContext();
+        const systemPrompt = buildSystemPrompt(context.substring(0, 2000));
+
+        // Build messages with history
         const messages = [
-            {
-                role: "system",
-                content: `You are J.A.R.V.I.S (Just A Rather Very Intelligent System), the ultra-advanced AI serving Shaik Irfan Basha. 
-                Respond conversationally and concisely for voice output. Keep responses under 100 words.
-                Portfolio context: ${context.substring(0, 2000)}`
-            },
-            { role: "user", content: text }
+            { role: "system", content: systemPrompt + "\nRespond conversationally and concisely for voice output. Keep responses under 100 words." }
         ];
+
+        conversationHistory.forEach(exchange => {
+            messages.push({ role: "user", content: exchange.user });
+            messages.push({ role: "assistant", content: exchange.assistant });
+        });
+
+        messages.push({ role: "user", content: text });
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
@@ -804,6 +872,12 @@ async function processVoiceCommand(text) {
         
         const responseText = data.choices[0].message.content;
 
+        // Store in conversation history
+        conversationHistory.push({ user: text, assistant: responseText });
+        if (conversationHistory.length > MAX_HISTORY) {
+            conversationHistory.shift();
+        }
+
         // Speaking state
         setVoiceState('speaking', 'Jarvis Speaking', 'Delivering response...');
 
@@ -833,7 +907,18 @@ async function processVoiceCommand(text) {
     } catch (error) {
         clearInterval(statusInterval);
         console.error('Voice mode error:', error);
-        voiceStatusBar.textContent = 'Error: ' + error.message;
+
+        let voiceError = 'Something went wrong. Please try again.';
+        if (error.name === 'AbortError') {
+            voiceError = 'Request timed out. The AI server may be busy — try again shortly.';
+        } else if (error.message.includes('429')) {
+            voiceError = 'Rate limit reached. Please wait a moment before trying again.';
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+            voiceError = 'API key error. The site owner needs to verify the GROQ_API_KEY.';
+        } else if (error.message === 'Failed to fetch') {
+            voiceError = 'Network error. Check your connection and try again.';
+        }
+        voiceStatusBar.textContent = voiceError;
 
         setTimeout(() => {
             if (voiceModeActive) {
@@ -845,4 +930,3 @@ async function processVoiceCommand(text) {
         isProcessing = false;
     }
 }
-

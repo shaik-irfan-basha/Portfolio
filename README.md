@@ -15,6 +15,7 @@
     <img src="https://img.shields.io/badge/Architecture-Vanilla_JS_&_GSAP-00e5ff?style=for-the-badge&logo=javascript&logoColor=black" />
     <img src="https://img.shields.io/badge/AI_Engine-Llama_3_70B-ff00ea?style=for-the-badge&logo=openai&logoColor=white" />
     <img src="https://img.shields.io/badge/Deployment-Netlify_Edge-00ff88?style=for-the-badge&logo=netlify&logoColor=black" />
+    <img src="https://img.shields.io/badge/Theme-Stealth_Mode-39ff14?style=for-the-badge&logo=hackthebox&logoColor=black" />
   </p>
 </div>
 
@@ -26,19 +27,29 @@ This repository houses the source code for my portfolio—a high-performance, in
 
 At the core of the experience operates **JARVIS**, an embedded interactive assistant capable of text-to-speech interaction, bidirectional voice comprehension, and context-aware portfolio navigation.
 
+---
+
 ## 🚀 Key Technological Capabilities
 
 ### 🤖 JARVIS AI Core
-- **Serverless API Proxy:** Secure environment integrations passing through Netlify Edge Functions directly to **Groq**.
-- **Versatile LLM (Llama 3):** Capable of reasoning, extracting portfolio payload data, and constructing responsive structures instantly.
-- **Multilingual Web Speech API:** Bidirectional voice recognition and speech synthesis (TTS) supporting native-like conversational rhythms.
-- **Zero-Latency State:** Contextually bound AI that knows my employment history, projects, and architecture details internally.
+| Capability | Details |
+|---|---|
+| **Serverless API Proxy** | Secure environment integrations through Netlify Edge Functions → **Groq** |
+| **Versatile LLM (Llama 3 70B)** | Reasoning, portfolio payload extraction, and instant responsive structures |
+| **Multilingual Web Speech API** | Bidirectional voice recognition and speech synthesis (TTS) |
+| **Conversation Memory** | Context-aware follow-up responses via conversation history |
+| **Zero-Latency State** | Internally bound to employment history, projects, and architecture details |
+| **Ctrl+K Quick Launch** | Keyboard shortcut to instantly open or close JARVIS from any section |
 
 ### 🎥 Cinematic Engineering
-- **GSAP Physics:** Uncompromising mathematically smooth physics powering the Arc Reactor Boot sequence and DOM interactions.
-- **CSS 3D Mapping:** Interactive, parallax-shifting 3D tilt geometry across all showcased credentials.
-- **Data Decryption Matrices:** Custom JS matrix text-decipher logic running independently on headers.
-- **Responsive Geometry:** CSS Grid & Flexbox layouts scaling from high-resolution studio monitors to mobile device canvases perfectly.
+| Feature | Technology |
+|---|---|
+| **GSAP Physics** | Smooth physics powering the Arc Reactor boot sequence and DOM interactions |
+| **CSS 3D Mapping** | Interactive, parallax-shifting 3D tilt geometry across all credentials |
+| **Data Decryption Matrices** | Custom JS matrix text-decipher logic running independently on headers |
+| **Micro-Animations** | Card shimmer effects, magnetic buttons, floating elements |
+| **Stealth Mode** | Dual-theme system — Arc Reactor (blue/purple) & Stealth Mode (green/black) |
+| **Responsive Geometry** | CSS Grid & Flexbox layouts scaling from studio monitors to mobile canvases |
 
 ---
 
@@ -49,33 +60,79 @@ At the core of the experience operates **JARVIS**, an embedded interactive assis
   "Front-End": ["HTML5", "CSS3 Properties & Variables", "Vanilla JS (ES6+)"],
   "Artificial Intelligence": ["Groq AI (Llama 3 70B)", "Serverless Proxy Protocol"],
   "Browser APIs": ["IntersectionObserver (Lazy Load)", "Web Speech API", "Local DOM Storage"],
-  "Animations": ["GreenSock (GSAP)", "Custom Matrix Math"]
+  "Animations": ["GreenSock (GSAP)", "Custom Matrix Math", "Scroll-Driven Animations"],
+  "Deployment": ["Netlify", "Netlify Edge Functions", "Environment Variables"]
 }
 ```
 
 ---
 
-## 🖥️ Local Installation Protocol
+## 🖥️ Local Development Setup
 
-Want to run the system locally? Follow the strict command protocols below.
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18+)
+- [Netlify CLI](https://docs.netlify.com/cli/get-started/)
+- A free API key from [Groq Console](https://console.groq.com/keys)
 
-### 1. Establish Local Codebase
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/shaik-irfan-basha/Portfolio.git
 cd Portfolio
 ```
 
-### 2. Configure Local AI Proxy
-The system uses the `netlify/functions` proxy by default for security to avoid exposing RAW API keys. To run the JARVIS bot locally:
+### 2. Install Netlify CLI
 
-1. Obtain a key from [Groq Console](https://console.groq.com/).
-2. Run using `netlify-cli` for exact environment testing:
-   ```bash
-   npm install netlify-cli -g
-   netlify dev
-   ```
-3. Or update the API keys in `netlify.toml` / `.env` for your local proxy instance.
+```bash
+npm install netlify-cli -g
+```
+
+### 3. Create Your Environment File
+
+Create a `.env` file in the project root (it's already in `.gitignore`):
+
+```env
+# Get your key from: https://console.groq.com/keys
+GROQ_API_KEY=your_actual_groq_api_key_here
+```
+
+### 4. Start the Local Dev Server
+
+```bash
+netlify dev
+```
+
+This will:
+- Serve the portfolio at `http://localhost:8888`
+- Automatically inject your `.env` variables into the serverless function
+- Enable full JARVIS AI functionality locally
+
+> **⚠️ Important:** Opening `index.html` directly as a file (`file://`) will **not** work for JARVIS because the AI requires the Netlify serverless proxy to securely pass API keys. Always use `netlify dev`.
+
+---
+
+## ☁️ Netlify Deployment & Environment Variables
+
+### Deploying to Netlify
+
+1. Push your code to GitHub
+2. Go to [Netlify Dashboard](https://app.netlify.com/) → **Add new site** → **Import from Git**
+3. Select your repository and deploy
+
+### Setting Up the API Key on Netlify
+
+Your `GROQ_API_KEY` must be set as an environment variable on Netlify (never hardcoded):
+
+1. Go to your Netlify site dashboard
+2. Navigate to **Site configuration** → **Environment variables**
+3. Click **Add a variable**
+4. Set:
+   - **Key**: `GROQ_API_KEY`
+   - **Value**: Your Groq API key from [console.groq.com/keys](https://console.groq.com/keys)
+5. Click **Save**
+6. **Redeploy** your site for the changes to take effect
+
+> **🔒 Security:** Never commit your API key to the repository. The `.env` file is excluded via `.gitignore`, and the serverless function reads the key from Netlify's secure environment at runtime.
 
 ---
 
@@ -85,24 +142,42 @@ The system uses the `netlify/functions` proxy by default for security to avoid e
 /Portfolio
 │── /images/               # Core Assets & SVGs
 │── /videos/               # Background Blackhole & Cinematic Showcase Compilations
-│── /netlify/functions     # Node.js proxies protecting the AI logic
-│── index.html             # The Master DOM 
-│── style.css              # Grid, Flexbox, & Aesthetic Typography Configurations
-│── app.js                 # GSAP Timelines, Lazy loading, & Viewport listeners
-│── jarvis.css             # AI Dialog Box styles & Chat configurations 
-└── jarvis.js              # Artificial Intelligence brain mapping & Web Speech triggers
+│── /Documents/            # Resume, Certificates & Credential PDFs
+│── /netlify/functions/    # Node.js proxies protecting the AI logic
+│── .env                   # Local API keys (git-ignored)
+│── .gitignore             # Excludes .env, node_modules, .netlify
+│── netlify.toml           # Build config & redirect rules
+│── index.html             # The Master DOM
+│── style.css              # Grid, Flexbox, Themes & Typography
+│── app.js                 # GSAP Timelines, Lazy Loading & Viewport Listeners
+│── jarvis.css             # AI Dialog Box Styles & Chat Configurations
+└── jarvis.js              # AI Brain Mapping, Conversation Memory & Web Speech
 ```
 
 ---
 
 ## 📡 Live Demonstration Commands
 
-When accessing the live application, initialize JARVIS and speak or type the following voice commands:
+When accessing the live application, initialize JARVIS (`Ctrl+K` or click the button) and try:
 
-- _"Who are you?"_
-- _"Show me Irfan's active deployments."_
-- _"What are his core competencies in AI?"_
-- _"Open voice mode."_
+| Command | What It Does |
+|---|---|
+| _"Who are you?"_ | JARVIS introduces himself and Irfan |
+| _"Show me Irfan's active deployments."_ | Lists all live projects with links |
+| _"What are his core competencies in AI?"_ | Detailed breakdown of AI skills |
+| _"Open voice mode."_ | Activates full-screen voice interaction |
+| _"Tell me about his experience at JASIQ Labs."_ | Work experience deep-dive |
+
+---
+
+## 🎨 Theme System
+
+The portfolio includes a **dual-theme system** toggled via the header:
+
+| Theme | Aesthetic | Primary Colors |
+|---|---|---|
+| **Arc Reactor** (Default) | Blue/Purple cinematic sci-fi | `#72a1de`, `#6600c5`, `#00e5ff` |
+| **Stealth Mode** | Green/Black tactical ops | `#39ff14`, `#0a0a0a`, `#00ff41` |
 
 ---
 
